@@ -1,13 +1,18 @@
-"""https://www.youtube.com/watch?v=iZUcX4kYrSM"""
+# https://www.youtube.com/watch?v=iZUcX4kYrSM
 
 from tkinter import HORIZONTAL, filedialog, ttk, Tk, PhotoImage, RIDGE, Canvas, GROOVE
 from PIL import Image, ImageTk
 import cv2
 
+CANVA_WIDTH = 400
+CANVA_HEIGHT = 300
+
 class FrontEnd:
     def __init__(self, master):
         self.master = master
+        self.modified = False
 
+        """
         self.frame_header = ttk.Frame(self.master)
         self.frame_header.pack()
 
@@ -25,6 +30,7 @@ class FrontEnd:
                   font=("Helvetica", 18)).grid(row=0, column=2, columnspan=1)
         ttk.Label(self.frame_header, text = "Version 1.0", 
                   font=("Helvetica", 10)).grid(row=1, column=1, columnspan=3)
+        """
         
 
         # Menu
@@ -51,7 +57,7 @@ class FrontEnd:
         self.save_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         
         # Image
-        self.canvas = Canvas(self.frame_menu, width=300, height=400, bg="gray")
+        self.canvas = Canvas(self.frame_menu, width=CANVA_WIDTH, height=CANVA_HEIGHT, bg="gray")
         self.canvas.grid(row=0, column=2, rowspan=10)
         
         
@@ -82,17 +88,15 @@ class FrontEnd:
 
         
     def upload_image(self):
+
+        # clear canvas and reset all frames
         self.canvas.delete("all")
         
         self.filename = filedialog.askopenfilename()
         self.original_image = cv2.imread(self.filename)
         self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2RGB)
-        new_width = 300
-        new_height = int(self.original_image.shape[0] * new_width / self.original_image.shape[1])
-        self.original_image = cv2.resize(self.original_image, (new_width, new_height))
-        
-        # edited image for export, filter_image for processing
-        self.edited_image = self.original_image.copy()
+
+        # filter_image for processing
         self.filter_image = self.original_image.copy()
 
         # enable buttons
@@ -101,14 +105,50 @@ class FrontEnd:
         self.filter_button.config(state="normal")
         self.save_button.config(state="normal")
 
-        self.display_image(self.edited_image)
+        # reset all frames
+        try:
+            self.frame_menu.pack_forget()
+            self.frame_menu.pack()
+        except:
+            pass
 
-    def display_image(self, image):
-        self.image = Image.fromarray(image)
-        self.image = ImageTk.PhotoImage(self.image)
-        pos_x = 150 - self.image.width() / 2
-        pos_y = 200 - self.image.height() / 2
-        self.canvas.create_image(pos_x, pos_y, image=self.image, anchor="nw")
+        try:
+            self.apply_and_cancel.pack_forget()
+            self.apply_and_cancel.pack()
+        except:
+            pass
+
+        try:
+            self.side_frame.pack_forget()
+            self.side_frame.pack()
+        except:
+            pass
+
+        self.display_action(self.filter_image)
+
+    def display_action(self, image):
+        if self.modified:
+            self.apply_button.config(state="normal")
+            self.revert_button.config(state="normal")
+            self.cancel_button.config(state="normal")
+
+        # resize image to fit the canvas
+        new_width = CANVA_WIDTH
+        new_height = int(image.shape[0] * (new_width / image.shape[1]))
+
+        if new_height > CANVA_HEIGHT:
+            new_height = CANVA_HEIGHT
+            new_width = int(image.shape[1] * (new_height / image.shape[0]))
+        self.display_image = cv2.resize(image, (new_width, new_height))
+
+
+        self.display_image = Image.fromarray(self.display_image)
+        self.display_image = ImageTk.PhotoImage(self.display_image)
+        
+        pos_x = int((CANVA_WIDTH - self.display_image.width()) / 2)
+        pos_y = int((CANVA_HEIGHT - self.display_image.height()) / 2)
+
+        self.canvas.create_image(pos_x, pos_y, image=self.display_image, anchor="nw")
 
     def crop_image(self):
         pass    
@@ -118,8 +158,8 @@ class FrontEnd:
 
     def filter_action(self):
         self.refresh_side_frame()
-        ttk.Button(self.side_frame, text="Black and White", 
-                   command=self.black_and_white).grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(self.side_frame, text="Grayscale", 
+                   command=self.grayscale).grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Blur",
                    command=self.blur_action).grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Negative",
@@ -136,8 +176,15 @@ class FrontEnd:
                    command=self.sepia).grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
     
 
-    def black_and_white(self):
-        pass
+    def grayscale(self):
+        # check if the image is already grayscale
+        if len(self.filter_image.shape) == 2:
+            return
+
+        self.editing_image = cv2.cvtColor(self.filter_image, cv2.COLOR_BGR2GRAY)
+
+        self.modified = True
+        self.display_action(self.editing_image)
 
     def blur_action(self):
         self.refresh_side_frame()
@@ -148,7 +195,16 @@ class FrontEnd:
         
         
     def average_blur(self, value):
-        pass    
+        value = float(value)
+        value = int(value)
+        if value % 2 == 0:
+            value += 1
+
+        self.editing_image = self.filter_image.copy()
+        self.editing_image = cv2.blur(self.editing_image, (value, value))
+
+        self.modified = True
+        self.display_action(self.editing_image)
 
     def negative(self):
         pass
@@ -174,8 +230,11 @@ class FrontEnd:
         pass
 
     def apply_action(self):
-        pass
+        self.filter_image = self.editing_image.copy()
+        self.refresh_side_frame()
 
+        self.display_action(self.filter_image)
+        
     def cancel(self):
         pass
 
@@ -191,12 +250,15 @@ class FrontEnd:
         self.canvas.unbind("<ButtonPress>")
         self.canvas.unbind("<B1-Motion>")
         self.canvas.unbind("<ButtonRelease>")
-        self.display_image(self.edited_image)
+        self.display_action(self.filter_image)
         self.side_frame = ttk.Frame(self.frame_menu)
         self.side_frame.grid(row=0, column=11, rowspan=10)
         self.side_frame.config(relief=GROOVE, padding=(50, 15))
 
 if __name__ == "__main__":        
     mainWindow = Tk()
+    mainWindow.title("Photoshop")
+    mainWindow.iconphoto(False, PhotoImage(file='icon.png'))
+    # mainWindow.geometry("1200x600")
     FrontEnd(mainWindow)
     mainWindow.mainloop()
