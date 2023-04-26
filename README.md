@@ -30,4 +30,4 @@ Class Front-end có 4 biến để lưu ảnh bao gồm
 * self.filter_image: lưu self.editing_image khi người dùng bấm apply (xem hàm apply_actionO)
 * self.display_image: dùng để display lên màn hình (xem hàm display_action())
 
-Nói chung, mọi người hãy load filter_image vào editing_image rồi edit chính trên editing_image rồi gọi *self.display_action(self.editing_image)* (xem hai hàm blur_action và grayscale để hiểu rõ)
+Nói chung, mọi người hãy load filter_image vào editing_image rồi edit chính trên editing_image rồi gọi *self.display_action(self.editing_image)* (xem hai hàm blur_action và grayscale để hiểu rõ). Mấy hàm Sketch, Emboss, Sepia tôi chỉ đặt vào cho có thôi, mọi người cứ tự nhiên thay đổi tên hàm.
