@@ -1,6 +1,7 @@
 from tkinter import HORIZONTAL, filedialog, ttk, Tk, PhotoImage, RIDGE, Canvas, GROOVE
 from PIL import Image, ImageTk
 import cv2
+import numpy as np
 
 CANVA_WIDTH = 400
 CANVA_HEIGHT = 300
@@ -46,17 +47,21 @@ class FrontEnd:
                    command=self.histogram)
         self.hist_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
+        self.fourier_button = ttk.Button(self.frame_menu, text="Fourier Transform",
+                   command=self.fourier_transform)
+        self.fourier_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+
         self.draw_button = ttk.Button(self.frame_menu, text="Draw on image",
                    command=self.draw_on_image)
-        self.draw_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.draw_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         
         self.filter_button = ttk.Button(self.frame_menu, text="Apply filter",
                    command=self.filter_action)
-        self.filter_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.filter_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
         self.save_button = ttk.Button(self.frame_menu, text="Save as",
                    command=self.save_as)
-        self.save_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.save_button.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         
         # Image
         self.canvas = Canvas(self.frame_menu, width=CANVA_WIDTH, height=CANVA_HEIGHT, bg="gray")
@@ -81,6 +86,7 @@ class FrontEnd:
         # disable buttons
         self.crop_button.config(state="disabled")
         self.hist_button.config(state="disabled")
+        self.fourier_button.config(state="disabled")
         self.draw_button.config(state="disabled")
         self.filter_button.config(state="disabled")
         self.save_button.config(state="disabled")
@@ -105,6 +111,7 @@ class FrontEnd:
         # enable buttons
         self.crop_button.config(state="normal")
         self.hist_button.config(state="normal")
+        self.fourier_button.config(state="normal")
         self.draw_button.config(state="normal")
         self.filter_button.config(state="normal")
         self.save_button.config(state="normal")
@@ -159,6 +166,19 @@ class FrontEnd:
 
     def histogram(self):
         pass
+
+    def fourier_transform(self):
+        self.modified = True
+
+        self.editing_image = cv2.cvtColor(self.filter_image, cv2.COLOR_BGR2GRAY)
+
+        dft = cv2.dft(np.float32(self.editing_image), flags=cv2.DFT_COMPLEX_OUTPUT)
+        dft_shift = np.fft.fftshift(dft)
+        magnitude_spectrum = 20 * np.log(cv2.magnitude(dft_shift[:, :, 0], dft_shift[:, :, 1]))
+
+        self.editing_image = magnitude_spectrum
+        self.display_action(self.editing_image)
+
 
     def draw_on_image(self):
         pass
@@ -243,10 +263,14 @@ class FrontEnd:
         self.display_action(self.filter_image)
         
     def cancel(self):
-        pass
+        self.editing_image = self.filter_image.copy()
+        self.refresh_side_frame()
+        self.display_action(self.editing_image)
 
     def revert_all_change(self):
-        pass
+        self.filter_image = self.original_image.copy()
+        self.refresh_side_frame()
+        self.display_action(self.filter_image)
 
     def refresh_side_frame(self):
         try:
