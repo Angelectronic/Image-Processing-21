@@ -254,7 +254,10 @@ class FrontEnd:
 
 
     def save_as(self):
-        pass
+        file_path = filedialog.asksaveasfilename(title="Save Image", filetypes=(("PNG", "*.png"), ("JPG", "*.jpg"), ("All Files", "*.*")))
+        if file_path:
+            save_image = Image.fromarray(self.filter_image)
+            save_image.save(file_path)
 
     def apply_action(self):
         self.filter_image = self.editing_image.copy()
