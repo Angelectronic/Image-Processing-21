@@ -161,8 +161,80 @@ class FrontEnd:
 
         self.canvas.create_image(pos_x, pos_y, image=self.display_image, anchor="nw")
 
+
     def crop_image(self):
-        pass    
+        self.refresh_side_frame()
+
+        # create a new window to get user input
+        window = Tk()
+
+        # Set the window size
+        window.geometry("400x300")
+
+        # Set the window position
+        # The format for geometry string is "width x height + x_offset + y_offset"
+        window.geometry("400x300+200+100")
+
+       # Create a Label widget and grid it on the first row, first column
+        label = ttk.Label(window, text="Enter starting X:")
+        label.grid(row=0, column=0)
+
+        # Create an Entry widget and grid it on the first row, second column
+        input_box = ttk.Entry(window)
+        input_box.grid(row=0, column=1)
+
+
+
+        # Create a second Label widget and grid it on the second row, first column
+        label2 = ttk.Label(window, text="Enter starting Y:")
+        label2.grid(row=1, column=0)
+
+        # Create a second Entry widget and grid it on the second row, second column
+        input_box2 = ttk.Entry(window)
+        input_box2.grid(row=1, column=1)
+
+
+        label3 = ttk.Label(window, text= "Enter width:")
+        label3.grid(row=2, column=0)
+        input_box3 = ttk.Entry(window)
+        input_box3.grid(row=2, column=1)
+
+
+
+        
+        label4 = ttk.Label(window, text="Enter height:")
+        label4.grid(row=3, column=0)
+        input_box4 = ttk.Entry(window)
+        input_box4.grid(row=3, column=1)
+
+        submit_button = ttk.Button(window, text="Submit", command=lambda: self.crop_image_callback(input_box.get(), input_box2.get(), input_box3.get(), input_box4.get(), window))
+        submit_button.grid(row=4, column=1)
+
+        # Center the Label and Entry widgets horizontally
+        window.columnconfigure(0, weight=1)
+        window.columnconfigure(1, weight=1)
+
+
+        pass
+
+    def crop_image_callback(self, x, y, width, height, window):
+        new_x = int(x)
+        new_y = int(y)
+        new_width = int(width)
+        new_height = int(height)
+        self.modified = True
+        
+        image_width = self.filter_image.shape[0]
+        image_height = self.filter_image.shape[1]
+
+        if new_x + new_width > image_width or new_y + new_height > image_height or new_x < 0 or new_y < 0 or new_width < 0 or new_height < 0:
+            print(f"WRONG INPUT. PLEASE INSERT AGAIN")
+            window.destroy()
+        else:
+            self.filter_image = self.filter_image[new_x:new_width, new_y:new_height] 
+            self.display_action(self.filter_image)
+            window.destroy()
+
 
     def histogram(self):
         pass
@@ -239,9 +311,38 @@ class FrontEnd:
     def sharpen(self):
         pass
 
-    def stylisation(self):
-        pass
+    def look_up_table(self , image, gamma):
+    # build a lookup table mapping the pixel values [0,255] to their adjusted gamma values
+        table = np.array(np.power(np.arange(0, 256) / 255.0, gamma) * 255.0, dtype=np.uint8)
 
+    # apply gamma correction using the lookup table
+        return cv2.LUT(image, table)
+    
+
+    # gamma correction using lookup table 
+    def stylisation(self):
+        self.modified = True
+        window = Tk()
+
+        window.title("Slider")
+        # create the slider
+        slider = ttk.Scale(window , from_=0, to = 5, orient= HORIZONTAL, length=200)
+        slider.pack()
+
+
+        # Create a label to display the slider value
+        value_label = ttk.Label(window)
+        value_label.pack()
+
+        def get_slider_value():
+            slider_value = slider.get()
+            value_label.config(text=f"Slider value: {slider_value:.2f}")
+            self.filter_image = self.look_up_table(self.filter_image, slider_value)
+            self.display_action(self.filter_image)
+
+        button = ttk.Button(window, text="Get Slider Value", command=get_slider_value)
+        button.pack()
+    
     def sketch_effect(self):
         pass
 
