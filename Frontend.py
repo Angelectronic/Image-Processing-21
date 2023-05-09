@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import utilities.histogram as histogram
 import utilities.morphology as morphology
+from tkinter import messagebox
 
 CANVA_WIDTH = 400
 CANVA_HEIGHT = 300
@@ -402,7 +403,6 @@ class FrontEnd:
 
     def sepia(self):
         if len(self.filter_image.shape) == 2:
-            from tkinter import messagebox
             messagebox.showerror("Error", "Sepia filter can't be applied to grayscale images")
             return
 

@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from tkinter import messagebox
 
 def compute_sk(img):
   hist = cv2.calcHist([img], [0], None, [256], [0, 256])
@@ -27,13 +28,21 @@ def equalize_cv2_colored(img):
   return equ
 
 def equalize_cv2_grayscale(img):
-  equ = cv2.equalizeHist(img)
-  return equ
+  try:
+    equ = cv2.equalizeHist(img)
+    return equ
+  except:
+    messagebox.showerror("Error", "Image is not grayscale")
+    return img
 
 def adaptive_equalize(img):
-  clahe = cv2.createCLAHE(clipLimit=40, tileGridSize=(8,8))
-  clahe_high = clahe.apply(img)
-  return clahe_high
+  try:
+    clahe = cv2.createCLAHE(clipLimit=40, tileGridSize=(8,8))
+    clahe_high = clahe.apply(img)
+    return clahe_high
+  except:
+    messagebox.showerror("Error", "Image is not grayscale")
+    return img
 
 def is_gray_scale(img):
     w, h = img.size
