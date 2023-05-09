@@ -2,6 +2,7 @@ from tkinter import HORIZONTAL, filedialog, ttk, Tk, PhotoImage, RIDGE, Canvas, 
 from PIL import Image, ImageTk
 import cv2
 import numpy as np
+import utilities.histogram as histogram
 
 CANVA_WIDTH = 400
 CANVA_HEIGHT = 300
@@ -21,7 +22,6 @@ class FrontEnd:
         self.logo = cv2.resize(self.logo, (50, 50))
         self.logo = Image.fromarray(self.logo)
         self.logo = ImageTk.PhotoImage(self.logo)
-
 
         # Header
         ttk.Label(self.frame_header, image=self.logo).grid(row=0, column=0, rowspan=2)
@@ -44,7 +44,7 @@ class FrontEnd:
         self.crop_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
         self.hist_button = ttk.Button(self.frame_menu, text="Histogram",
-                   command=self.histogram)
+                   command=self.histogram_action)
         self.hist_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
         self.fourier_button = ttk.Button(self.frame_menu, text="Fourier Transform",
@@ -162,10 +162,33 @@ class FrontEnd:
         self.canvas.create_image(pos_x, pos_y, image=self.display_image, anchor="nw")
 
     def crop_image(self):
-        pass    
-
-    def histogram(self):
         pass
+
+    def histogram_action(self):
+        self.refresh_side_frame()
+        ttk.Button(
+            self.side_frame,
+            text="Equalize",
+            command=lambda: self.display_action(histogram.equalize(self.filter_image))
+        ).grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Equalize (CV2-colored)",
+            command=lambda: self.display_action(histogram.equalize_cv2_colored(self.filter_image)),
+            # state="disabled" if histogram.is_gray_scale(self.original_image) else "normal"
+        ).grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Equalize (CV2-grayscale)",
+            command=lambda: self.display_action(histogram.equalize_cv2_grayscale(self.filter_image)),
+            # state="normal" if histogram.is_gray_scale(self.original_image) else "disabled"
+        ).grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Adaptive EQ",
+            command=lambda: self.display_action(histogram.adaptive_equalize(self.filter_image))
+        ).grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        
 
     def fourier_transform(self):
         self.modified = True
