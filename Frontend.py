@@ -2,6 +2,8 @@ from tkinter import HORIZONTAL, filedialog, ttk, Tk, PhotoImage, RIDGE, Canvas, 
 from PIL import Image, ImageTk
 import cv2
 import numpy as np
+from numpy.fft import fft2, ifft2
+from scipy.signal import gaussian, convolve2d
 import utilities.histogram as histogram
 import utilities.morphology as morphology
 from tkinter import messagebox
@@ -328,6 +330,26 @@ class FrontEnd:
         self.modified = True
         self.display_action(self.editing_image)
 
+    def gaussian_kernel(kernel_size=3):
+        h = gaussian(kernel_size, kernel_size / 3).reshape(kernel_size, 1)
+        h = np.dot(h, h.transpose())
+        h /= np.sum(h)
+        return
+
+    def wiener_filter(self, kernel, K):
+        kernel /= np.sum(kernel)
+        self.editing_image = fft2(self.editing_image)
+        kernel = fft2(kernel, s=self.editing_image.shape)
+        kernel = np.conj(kernel) / (np.abs(kernel) ** 2 + K)
+        self.editing_image = self.editing_image * kernel
+        self.editing_image = np.abs(ifft2(self.editing_image))
+        return self.editing_image
+
+    def denoise(self,gaussian_kernel, wiener_filter):
+        kernel = gaussian_kernel(5)
+        self.editing_image = wiener_filter(self.editing_image, kernel, K = 10)
+        self.display_action(self.editing_image)
+
     def negative(self):
         self.modified = True
         self.editing_image = cv2.bitwise_not(self.filter_image)
@@ -402,27 +424,8 @@ class FrontEnd:
         self.display_action(self.editing_image)
 
     def sepia(self):
-        if len(self.filter_image.shape) == 2:
-            messagebox.showerror("Error", "Sepia filter can't be applied to grayscale images")
-            return
+        pass
 
-        self.modified = True
-        
-        b,g,r = cv2.split(self.filter_image)
-        b = b.astype(np.float32)
-        g = g.astype(np.float32)
-        r = r.astype(np.float32)
-        
-        sepia_b = b * 0.272 + g * 0.534 + r * 0.131
-        sepia_g = b * 0.349 + g * 0.686 + r * 0.168
-        sepia_r = b * 0.393 + g * 0.769 + r * 0.189
-
-        sepia_b[sepia_b > 255] = 255
-        sepia_g[sepia_g > 255] = 255
-        sepia_r[sepia_r > 255] = 255
-
-        self.editing_image = cv2.merge((sepia_b.astype(np.uint8), sepia_g.astype(np.uint8), sepia_r.astype(np.uint8)))
-        self.display_action(self.editing_image)
 
 
     def save_as(self):
