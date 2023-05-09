@@ -11,27 +11,7 @@ CANVA_HEIGHT = 300
 class FrontEnd:
     def __init__(self, master):
         self.master = master
-        self.modified = False
-
-        """
-        self.frame_header = ttk.Frame(self.master)
-        self.frame_header.pack()
-
-        # logo
-        self.logo = cv2.imread("icon.png")
-        self.logo = cv2.cvtColor(self.logo, cv2.COLOR_BGR2RGB)
-        self.logo = cv2.resize(self.logo, (50, 50))
-        self.logo = Image.fromarray(self.logo)
-        self.logo = ImageTk.PhotoImage(self.logo)
-
-        # Header
-        ttk.Label(self.frame_header, image=self.logo).grid(row=0, column=0, rowspan=2)
-        ttk.Label(self.frame_header, text = "Photoshop", 
-                  font=("Helvetica", 18)).grid(row=0, column=2, columnspan=1)
-        ttk.Label(self.frame_header, text = "Version 1.0", 
-                  font=("Helvetica", 10)).grid(row=1, column=1, columnspan=3)
-        """
-        
+        self.modified = False        
 
         # Menu
         self.frame_menu = ttk.Frame(self.master)
@@ -55,14 +35,10 @@ class FrontEnd:
         self.fourier_button = ttk.Button(self.frame_menu, text="Fourier Transform",
                    command=self.fourier_transform)
         self.fourier_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
-
-        self.draw_button = ttk.Button(self.frame_menu, text="Draw on image",
-                   command=self.draw_on_image)
-        self.draw_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         
         self.filter_button = ttk.Button(self.frame_menu, text="Apply filter",
                    command=self.filter_action)
-        self.filter_button.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.filter_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
         self.save_button = ttk.Button(self.frame_menu, text="Save as",
                    command=self.save_as)
@@ -93,7 +69,6 @@ class FrontEnd:
         self.hist_button.config(state="disabled")
         self.morph_button.config(state="disabled")
         self.fourier_button.config(state="disabled")
-        self.draw_button.config(state="disabled")
         self.filter_button.config(state="disabled")
         self.save_button.config(state="disabled")
         self.apply_button.config(state="disabled")
@@ -116,7 +91,6 @@ class FrontEnd:
         self.hist_button.config(state="normal")
         self.morph_button.config(state="normal")
         self.fourier_button.config(state="normal")
-        self.draw_button.config(state="normal")
         self.filter_button.config(state="normal")
         self.save_button.config(state="normal")
 
@@ -319,10 +293,8 @@ class FrontEnd:
                    command=self.gamma_action).grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Sketch Effect",
                    command=self.sketch_effect).grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
-        ttk.Button(self.side_frame, text="Emboss",
-                   command=self.emboss).grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Sepia",
-                   command=self.sepia).grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+                   command=self.sepia).grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
     
 
     def grayscale(self):
@@ -427,10 +399,6 @@ class FrontEnd:
         blur_img = cv2.GaussianBlur(gray_img, (kernel_size, kernel_size), 0)
         self.editing_image = cv2.divide(gray_img, blur_img, scale=256)
         self.display_action(self.editing_image)
-        
-
-    def emboss(self):
-        pass
 
     def sepia(self):
         if len(self.filter_image.shape) == 2:
