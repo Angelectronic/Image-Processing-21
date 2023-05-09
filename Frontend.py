@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 import cv2
 import numpy as np
 import utilities.histogram as histogram
+import utilities.morphology as morphology
 
 CANVA_WIDTH = 400
 CANVA_HEIGHT = 300
@@ -47,21 +48,25 @@ class FrontEnd:
                    command=self.histogram_action)
         self.hist_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
+        self.morph_button = ttk.Button(self.frame_menu, text="Morph",
+                   command=self.morph_action)
+        self.morph_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+
         self.fourier_button = ttk.Button(self.frame_menu, text="Fourier Transform",
                    command=self.fourier_transform)
-        self.fourier_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.fourier_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
         self.draw_button = ttk.Button(self.frame_menu, text="Draw on image",
                    command=self.draw_on_image)
-        self.draw_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.draw_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         
         self.filter_button = ttk.Button(self.frame_menu, text="Apply filter",
                    command=self.filter_action)
-        self.filter_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.filter_button.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
         self.save_button = ttk.Button(self.frame_menu, text="Save as",
                    command=self.save_as)
-        self.save_button.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        self.save_button.grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         
         # Image
         self.canvas = Canvas(self.frame_menu, width=CANVA_WIDTH, height=CANVA_HEIGHT, bg="gray")
@@ -86,6 +91,7 @@ class FrontEnd:
         # disable buttons
         self.crop_button.config(state="disabled")
         self.hist_button.config(state="disabled")
+        self.morph_button.config(state="disabled")
         self.fourier_button.config(state="disabled")
         self.draw_button.config(state="disabled")
         self.filter_button.config(state="disabled")
@@ -93,14 +99,11 @@ class FrontEnd:
         self.apply_button.config(state="disabled")
         self.revert_button.config(state="disabled")
         self.cancel_button.config(state="disabled")
-        
 
-        
     def upload_image(self):
-
         # clear canvas and reset all frames
         self.canvas.delete("all")
-        
+
         self.filename = filedialog.askopenfilename()
         self.original_image = cv2.imread(self.filename)
         self.original_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2RGB)
@@ -111,6 +114,7 @@ class FrontEnd:
         # enable buttons
         self.crop_button.config(state="normal")
         self.hist_button.config(state="normal")
+        self.morph_button.config(state="normal")
         self.fourier_button.config(state="normal")
         self.draw_button.config(state="normal")
         self.filter_button.config(state="normal")
@@ -189,6 +193,28 @@ class FrontEnd:
             command=lambda: self.display_action(histogram.adaptive_equalize(self.filter_image))
         ).grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         
+    def morph_action(self):
+        self.refresh_side_frame()
+        ttk.Button(
+            self.side_frame,
+            text="Erode",
+            command=lambda: self.display_action(morphology.erode(self.filter_image))
+        ).grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Dilate",
+            command=lambda: self.display_action(morphology.dilate(self.filter_image)),
+        ).grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Opening",
+            command=lambda: self.display_action(morphology.opening(self.filter_image)),
+        ).grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Closing",
+            command=lambda: self.display_action(morphology.closing(self.filter_image))
+        ).grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
     def fourier_transform(self):
         self.modified = True
