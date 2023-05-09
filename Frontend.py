@@ -210,6 +210,9 @@ class FrontEnd:
         submit_button = ttk.Button(window, text="Submit", command=lambda: self.crop_image_callback(input_box.get(), input_box2.get(), input_box3.get(), input_box4.get(), window))
         submit_button.grid(row=4, column=1)
 
+        label5 = ttk.Label(window, text="Image size: " + str(self.filter_image.shape[0]) + "x" + str(self.filter_image.shape[1]))
+        label5.grid(row=5, column=0)
+
         # Center the Label and Entry widgets horizontally
         window.columnconfigure(0, weight=1)
         window.columnconfigure(1, weight=1)
@@ -266,7 +269,7 @@ class FrontEnd:
         ttk.Button(self.side_frame, text="Sharpen",
                    command=self.sharpen).grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Gamma Correction",
-                   command=self.stylisation).grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+                   command=self.gamma_action).grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Sketch Effect",
                    command=self.sketch_effect).grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Emboss",
@@ -306,10 +309,27 @@ class FrontEnd:
         self.display_action(self.editing_image)
 
     def negative(self):
-        pass
+        self.modified = True
+        self.editing_image = cv2.bitwise_not(self.filter_image)
+        self.display_action(self.editing_image)
 
     def sharpen(self):
-        pass
+        self.modified = True
+
+        if len(self.filter_image.shape) == 2:
+            height, width = self.filter_image.shape
+        elif len(self.filter_image.shape) == 3:
+            height, width, _ = self.filter_image.shape
+
+
+        kernel_size = int(min(height, width) * 0.01)
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+        
+        self.editing_image = cv2.GaussianBlur(self.filter_image, (kernel_size, kernel_size), 0)
+        self.editing_image = cv2.addWeighted(self.filter_image, 1.5, self.editing_image, -0.5, 0)
+
+        self.display_action(self.editing_image)
 
     def look_up_table(self , image, gamma):
     # build a lookup table mapping the pixel values [0,255] to their adjusted gamma values
@@ -320,7 +340,7 @@ class FrontEnd:
     
 
     # gamma correction using lookup table 
-    def stylisation(self):
+    def gamma_action(self):
         self.modified = True
         window = Tk()
 
@@ -331,27 +351,63 @@ class FrontEnd:
 
 
         # Create a label to display the slider value
-        value_label = ttk.Label(window)
+        value_label = ttk.Label(window) 
         value_label.pack()
 
         def get_slider_value():
             slider_value = slider.get()
             value_label.config(text=f"Slider value: {slider_value:.2f}")
-            self.filter_image = self.look_up_table(self.filter_image, slider_value)
-            self.display_action(self.filter_image)
+            self.editing_image = self.look_up_table(self.filter_image, slider_value)
+            self.display_action(self.editing_image)
 
         button = ttk.Button(window, text="Get Slider Value", command=get_slider_value)
         button.pack()
     
     def sketch_effect(self):
-        pass
+        self.modified = True
+
+        if len(self.filter_image.shape) == 2:
+            height, width = self.filter_image.shape
+        elif len(self.filter_image.shape) == 3:
+            height, width, _ = self.filter_image.shape
+        
+        gray_img = cv2.cvtColor(self.filter_image, cv2.COLOR_BGR2GRAY)
+
+        kernel_size = int(min(height, width) * 0.01)
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+
+        blur_img = cv2.GaussianBlur(gray_img, (kernel_size, kernel_size), 0)
+        self.editing_image = cv2.divide(gray_img, blur_img, scale=256)
+        self.display_action(self.editing_image)
+        
 
     def emboss(self):
         pass
 
     def sepia(self):
-        pass
+        if len(self.filter_image.shape) == 2:
+            from tkinter import messagebox
+            messagebox.showerror("Error", "Sepia filter can't be applied to grayscale images")
+            return
 
+        self.modified = True
+        
+        b,g,r = cv2.split(self.filter_image)
+        b = b.astype(np.float32)
+        g = g.astype(np.float32)
+        r = r.astype(np.float32)
+        
+        sepia_b = b * 0.272 + g * 0.534 + r * 0.131
+        sepia_g = b * 0.349 + g * 0.686 + r * 0.168
+        sepia_r = b * 0.393 + g * 0.769 + r * 0.189
+
+        sepia_b[sepia_b > 255] = 255
+        sepia_g[sepia_g > 255] = 255
+        sepia_r[sepia_r > 255] = 255
+
+        self.editing_image = cv2.merge((sepia_b.astype(np.uint8), sepia_g.astype(np.uint8), sepia_r.astype(np.uint8)))
+        self.display_action(self.editing_image)
 
 
     def save_as(self):
