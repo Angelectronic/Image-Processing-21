@@ -3,8 +3,9 @@ from PIL import Image, ImageTk
 import cv2
 import numpy as np
 
-CANVA_WIDTH = 400
-CANVA_HEIGHT = 300
+CANVA_WIDTH = 900
+CANVA_HEIGHT = 400
+
 
 class FrontEnd:
     def __init__(self, master):
@@ -151,7 +152,6 @@ class FrontEnd:
             new_height = CANVA_HEIGHT
             new_width = int(image.shape[1] * (new_height / image.shape[0]))
         self.display_image = cv2.resize(image, (new_width, new_height))
-
 
         self.display_image = Image.fromarray(self.display_image)
         self.display_image = ImageTk.PhotoImage(self.display_image)
