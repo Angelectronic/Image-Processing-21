@@ -2,6 +2,8 @@ from tkinter import HORIZONTAL, filedialog, ttk, Tk, PhotoImage, RIDGE, Canvas, 
 from PIL import Image, ImageTk
 import cv2
 import numpy as np
+from numpy.fft import fft2, ifft2
+from scipy.signal import gaussian, convolve2d
 
 CANVA_WIDTH = 400
 CANVA_HEIGHT = 300
@@ -201,7 +203,6 @@ class FrontEnd:
                    command=self.emboss).grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
         ttk.Button(self.side_frame, text="Sepia",
                    command=self.sepia).grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
-    
 
     def grayscale(self):
         # check if the image is already grayscale
@@ -233,7 +234,28 @@ class FrontEnd:
         self.modified = True
         self.display_action(self.editing_image)
 
+    def gaussian_kernel(kernel_size=3):
+        h = gaussian(kernel_size, kernel_size / 3).reshape(kernel_size, 1)
+        h = np.dot(h, h.transpose())
+        h /= np.sum(h)
+        return
+
+    def wiener_filter(self, kernel, K):
+        kernel /= np.sum(kernel)
+        self.editing_image = fft2(self.editing_image)
+        kernel = fft2(kernel, s=self.editing_image.shape)
+        kernel = np.conj(kernel) / (np.abs(kernel) ** 2 + K)
+        self.editing_image = self.editing_image * kernel
+        self.editing_image = np.abs(ifft2(self.editing_image))
+        return self.editing_image
+
+    def denoise(self,gaussian_kernel, wiener_filter):
+        kernel = gaussian_kernel(5)
+        self.editing_image = wiener_filter(self.editing_image, kernel, K = 10)
+        self.display_action(self.editing_image)
+
     def negative(self):
+
         pass
 
     def sharpen(self):
@@ -250,7 +272,6 @@ class FrontEnd:
 
     def sepia(self):
         pass
-
 
 
     def save_as(self):
