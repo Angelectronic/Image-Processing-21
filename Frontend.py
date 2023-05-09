@@ -221,9 +221,6 @@ class FrontEnd:
         window.columnconfigure(0, weight=1)
         window.columnconfigure(1, weight=1)
 
-
-        pass
-
     def crop_image_callback(self, x, y, width, height, window):
         new_x = int(x)
         new_y = int(y)
@@ -243,8 +240,54 @@ class FrontEnd:
             window.destroy()
 
 
-    def histogram(self):
-        pass
+    def histogram_action(self):
+        self.refresh_side_frame()
+        self.modified = True
+        ttk.Button(
+            self.side_frame,
+            text="Equalize",
+            command=lambda: self.display_action(histogram.equalize(self.filter_image))
+        ).grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Equalize (CV2-colored)",
+            command=lambda: self.display_action(histogram.equalize_cv2_colored(self.filter_image)),
+            # state="disabled" if histogram.is_gray_scale(self.original_image) else "normal"
+        ).grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Equalize (CV2-grayscale)",
+            command=lambda: self.display_action(histogram.equalize_cv2_grayscale(self.filter_image)),
+            # state="normal" if histogram.is_gray_scale(self.original_image) else "disabled"
+        ).grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Adaptive EQ",
+            command=lambda: self.display_action(histogram.adaptive_equalize(self.filter_image))
+        ).grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+
+    def morph_action(self):
+        self.refresh_side_frame()
+        ttk.Button(
+            self.side_frame,
+            text="Erode",
+            command=lambda: self.display_action(morphology.erode(self.filter_image))
+        ).grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Dilate",
+            command=lambda: self.display_action(morphology.dilate(self.filter_image)),
+        ).grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Opening",
+            command=lambda: self.display_action(morphology.opening(self.filter_image)),
+        ).grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+        ttk.Button(
+            self.side_frame,
+            text="Closing",
+            command=lambda: self.display_action(morphology.closing(self.filter_image))
+        ).grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
     def fourier_transform(self):
         self.modified = True
