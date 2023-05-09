@@ -43,6 +43,10 @@ class FrontEnd:
                    command=self.filter_action)
         self.filter_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
 
+        self.denoise_button = ttk.Button(self.frame_menu, text="Denoise",
+                   command=self.denoise)
+        self.denoise_button.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
+
         self.save_button = ttk.Button(self.frame_menu, text="Save as",
                    command=self.save_as)
         self.save_button.grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="sw")
@@ -73,6 +77,7 @@ class FrontEnd:
         self.morph_button.config(state="disabled")
         self.fourier_button.config(state="disabled")
         self.filter_button.config(state="disabled")
+        self.denoise_button.config(state="disabled")
         self.save_button.config(state="disabled")
         self.apply_button.config(state="disabled")
         self.revert_button.config(state="disabled")
@@ -278,10 +283,6 @@ class FrontEnd:
         self.editing_image = magnitude_spectrum
         self.display_action(self.editing_image)
 
-
-    def draw_on_image(self):
-        pass
-
     def filter_action(self):
         self.refresh_side_frame()
         ttk.Button(self.side_frame, text="Grayscale", 
@@ -330,11 +331,11 @@ class FrontEnd:
         self.modified = True
         self.display_action(self.editing_image)
 
-    def gaussian_kernel(kernel_size=3):
+    def gaussian_kernel(self, kernel_size=3):
         h = gaussian(kernel_size, kernel_size / 3).reshape(kernel_size, 1)
         h = np.dot(h, h.transpose())
         h /= np.sum(h)
-        return
+        return h
 
     def wiener_filter(self, kernel, K):
         kernel /= np.sum(kernel)
@@ -345,9 +346,9 @@ class FrontEnd:
         self.editing_image = np.abs(ifft2(self.editing_image))
         return self.editing_image
 
-    def denoise(self,gaussian_kernel, wiener_filter):
-        kernel = gaussian_kernel(5)
-        self.editing_image = wiener_filter(self.editing_image, kernel, K = 10)
+    def denoise(self):
+        kernel = self.gaussian_kernel(5)
+        self.editing_image = self.wiener_filter(kernel, 10)
         self.display_action(self.editing_image)
 
     def negative(self):
