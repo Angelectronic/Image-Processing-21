@@ -17,9 +17,9 @@ Lê Thu Trà:  <br><br>
 
 Required libraries:
 
-- Tkinter (`sudo apt-get install python3-tk`)
-- PIL + imagetk (`sudo apt-get install python3-pil python3-pil.imagetk`)
-- OpenCV (`sudo apt-get install python3-opencv`)
+- Tkinter, CustomTkinter (Modern Tkinter Gui)
+- PIL
+- OpenCV
 
 Run:<br>
 `python main.py`
@@ -28,12 +28,14 @@ One can freely add libraries into the project. Please, add them into the require
 
 # Danh sách các hàm:
 * Upload Image
+* Draw Image
+* Rotate and Flip Image
+* Filter(gồm: Grayscale, Blur, Negative, Sharpen, Gamma, Sketch Effect, Sepia)
 * Crop Image
 * Histogram
 * Morph
 * Fourier Transform
-* Apply filter(gồm: Grayscale, Blur, Negative, Sharpen, Gamma Correction, Sketch Effect, Sepia)
-* Save as
+* Save Image
 
-Ngoài ra còn có **Apply** để lưu thay đổi, **Revert All change** để trở lại ảnh ban đầu và **Cancel** để không modified nữa
+Một số chức năng tự thay đổi khi chọn, một số cần ấn nút Apply và có Undo, Redo giúp tiện lợi hơn trong quá trình xử lý ảnh.
     

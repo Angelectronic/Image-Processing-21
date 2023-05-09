@@ -1,14 +1,17 @@
-import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk, ImageGrab
 import customtkinter as ctk
 import cv2
 import numpy as np
 
-from edit.blur import BlurMode
-from edit.crop import *
-from edit.draw import DrawMode
-from edit.gamma import GammaMode
+from utilities.Fourier import FourierMode
+from utilities.blur import BlurMode
+from utilities.crop import CropMode
+from utilities.draw import DrawMode
+from utilities.gamma import GammaMode
+from utilities.histogram import HistogramMode
+from utilities.morphology import MorphMode
+from utilities.rotate import RotateMode
 
 CANVAS_WIDTH, CANVAS_HEIGHT = 1040, 720
 
@@ -52,7 +55,7 @@ class Window:
         self.original_image = None
         self.edit_image = Memory()
 
-        self.img = None
+        self.img = np.array([[0]])
         self.display_image = None
 
         self.mode = []
@@ -64,18 +67,26 @@ class Window:
 
         self.button_frame = ctk.CTkFrame(app, width=40, height=720, fg_color="gray12")
         self.button_frame.pack(side='left', fill="y")
+        self.t1 = ctk.CTkLabel(self.button_frame, text="", text_color="#ffffff", height=10)
+        self.t1.pack(pady=0)
 
         self.draw_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
                                          image=ctk.CTkImage(dark_image=Image.open("assets/drawing.png"))
                                          , command=self.draw_mode)
-        self.draw_button.pack(pady=20)
+        self.draw_button.pack()
 
         self.erase_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
                                           image=ctk.CTkImage(dark_image=Image.open("assets/eraser.png")))
-        self.erase_button.pack()
+        self.erase_button.pack(pady=20)
+
+        self.rotate_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
+                                           image=ctk.CTkImage(dark_image=Image.open("assets/rotate-left.png")),
+                                           command=self.rotate)
+        self.rotate_button.pack()
 
         self.crop_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
-                                         image=ctk.CTkImage(dark_image=Image.open("assets/crop-tool.png")))
+                                         image=ctk.CTkImage(dark_image=Image.open("assets/crop-tool.png")),
+                                         command=self.crop)
         self.crop_button.pack(pady=20)
 
         self.blur_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
@@ -103,18 +114,32 @@ class Window:
                                           command=self.gamma)
         self.gamma_button.pack()
 
-        self.emboss_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
-                                           image=ctk.CTkImage(dark_image=Image.open("assets/emboss.png")))
-        self.emboss_button.pack(pady=20)
-
         self.sharpen_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12",
                                             hover_color="black",
-                                            image=ctk.CTkImage(dark_image=Image.open("assets/sharpen.png")))
-        self.sharpen_button.pack()
+                                            image=ctk.CTkImage(dark_image=Image.open("assets/sharpen.png")),
+                                            command=self.sharpen)
+        self.sharpen_button.pack(pady=20)
 
         self.sketch_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
-                                           image=ctk.CTkImage(dark_image=Image.open("assets/sketch.png")))
-        self.sketch_button.pack(pady=20)
+                                           image=ctk.CTkImage(dark_image=Image.open("assets/sketch.png")),
+                                           command=self.sketch_effect)
+        self.sketch_button.pack()
+
+        self.morph_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
+                                          image=ctk.CTkImage(dark_image=Image.open("assets/morph.png")),
+                                          command=self.morph)
+        self.morph_button.pack(pady=20)
+
+        self.histogram_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12", hover_color="black",
+                                              image=ctk.CTkImage(dark_image=Image.open("assets/histogram.png")),
+                                              command=self.histogram)
+        self.histogram_button.pack()
+
+        self.fourier_button = ctk.CTkButton(self.button_frame, width=20, text="", fg_color="gray12",
+                                            hover_color="black",
+                                            image=ctk.CTkImage(dark_image=Image.open("assets/fourier-transform.png")),
+                                            command=self.fourier)
+        self.fourier_button.pack(pady=20)
 
         # ################# Canvas Frame ###############
 
@@ -147,10 +172,10 @@ class Window:
         self.property_view.add("Properties")  # add tab at the end
         self.property_view.set("Properties")  # set currently visible tab
 
-        layer_view = ctk.CTkTabview(master=self.property_frame, height=300, segmented_button_selected_color="gray30")
-        layer_view.pack(padx=10, pady=10)
-        layer_view.add("Layers")  # add tab at the end
-        layer_view.set("Layers")  # set currently visible tab
+        # layer_view = ctk.CTkTabview(master=self.property_frame, height=300, segmented_button_selected_color="gray30")
+        # layer_view.pack(padx=10, pady=10)
+        # layer_view.add("Layers")  # add tab at the end
+        # layer_view.set("Layers")  # set currently visible tab
 
         self.df_property = ctk.CTkLabel(master=self.property_view.tab("Properties"), text="No properties")
         self.df_property.pack()
@@ -166,6 +191,26 @@ class Window:
         self.blur_mode = BlurMode(self.property_view.tab("Properties"), self)
         self.blur_mode.hide()
         self.mode.append(self.blur_mode)
+
+        self.crop_mode = CropMode(self.property_view.tab("Properties"), self)
+        self.crop_mode.hide()
+        self.mode.append(self.crop_mode)
+
+        self.morph_mode = MorphMode(self.property_view.tab("Properties"), self)
+        self.morph_mode.hide()
+        self.mode.append(self.morph_mode)
+
+        self.fourier_mode = FourierMode(self.property_view.tab("Properties"), self)
+        self.fourier_mode.hide()
+        self.mode.append(self.fourier_mode)
+
+        self.histogram_mode = HistogramMode(self.property_view.tab("Properties"), self)
+        self.histogram_mode.hide()
+        self.mode.append(self.histogram_mode)
+
+        self.rotate_mode = RotateMode(self.property_view.tab("Properties"), self)
+        self.rotate_mode.hide()
+        self.mode.append(self.rotate_mode)
 
     def show_image(self, image):
         if image is None:
@@ -198,44 +243,42 @@ class Window:
         self.edit_image.append(self.original_image.copy())
         self.img = self.edit_image.back()
 
+        self.crop_mode.label5.configure(text="Image size: " + str(self.img.shape[0]) + "x" + str(
+            self.img.shape[1]))
+
         self.modify = True
         self.load_image_button.pack_forget()
         self.load_image_button.place_forget()
 
         self.show_image(self.img)
 
+    def close_image(self):
+        self.canvas.delete("all")
+        self.load_image_button.pack()
+
     def save_png(self):
-        self.filename = filedialog.asksaveasfilename(
+        file_path = filedialog.asksaveasfilename(
             filetypes=(
                 ("PNG Image", "*.png"),
                 ("All File", "*.*")
             )
         )
 
-        self.display_image = ImageGrab.grab(bbox=(
-            self.canvas.winfo_rootx() + self.app.winfo_rootx(),
-            self.canvas.winfo_rooty() + self.app.winfo_rooty(),
-            self.canvas.winfo_rootx() + self.canvas.winfo_width(),
-            self.canvas.winfo_rooty() + self.canvas.winfo_height()
-        ))
-
-        self.display_image.save(self.filename + ".png")
+        if file_path:
+            save_image = Image.fromarray(self.img)
+            save_image.save(file_path)
 
     def save_jpg(self):
-        self.filename = filedialog.asksaveasfilename(
+        file_path = filedialog.asksaveasfilename(
             filetypes=(
                 ("JPG Image", "*.jpg"),
                 ("All File", "*.*")
             )
         )
 
-        self.display_image = ImageGrab.grab(bbox=(
-            self.canvas.winfo_rootx() + self.app.winfo_rootx(),
-            self.canvas.winfo_rooty() + self.app.winfo_rooty(),
-            self.canvas.winfo_rootx() + self.canvas.winfo_width(),
-            self.canvas.winfo_rooty() + self.canvas.winfo_height()
-        ))
-        self.display_image.save(self.filename + ".jpg")
+        if file_path:
+            save_image = Image.fromarray(self.img)
+            save_image.save(file_path)
 
     def draw_mode(self):
         for x in self.mode:
@@ -248,6 +291,7 @@ class Window:
 
     def grayscale(self):
         self.reset_property()
+        self.df_property.configure(text="Gray", text_color="#19dde0")
         if len(self.img.shape) == 2:
             return
 
@@ -257,6 +301,8 @@ class Window:
 
     def sepia(self):
         self.reset_property()
+        self.df_property.configure(text="Sepia", text_color="#19dde0")
+
         gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY) if len(self.img.shape) != 2 else self.img
 
         normalized_gray = np.array(gray, np.float32) / 255
@@ -276,6 +322,7 @@ class Window:
 
     def neg(self):
         self.reset_property()
+        self.df_property.configure(text="Negative", text_color="#19dde0")
         self.edit_image.append(255 - self.img)
         self.img = self.edit_image.back()
         self.show_image(self.img)
@@ -294,6 +341,76 @@ class Window:
         self.df_property.pack_forget()
         self.blur_mode.pack()
 
+    def crop(self):
+        self.reset_property()
+        self.df_property.pack_forget()
+
+        self.crop_mode.pack()
+
+    def sketch_effect(self):
+        self.reset_property()
+        self.df_property.configure(text="Sketch Effect", text_color="#19dde0")
+
+        if len(self.img.shape) == 2:
+            height, width = self.img.shape
+        elif len(self.img.shape) == 3:
+            height, width, _ = self.img.shape
+
+        gray_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY) if len(self.img.shape) != 2 else self.img
+
+        kernel_size = int(min(height, width) * 0.01)
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+
+        blur_img = cv2.GaussianBlur(gray_img, (kernel_size, kernel_size), 0)
+        self.edit_image.append(cv2.divide(gray_img, blur_img, scale=256))
+        self.img = self.edit_image.back()
+        self.show_image(self.img)
+
+    def sharpen(self):
+        self.reset_property()
+        self.df_property.configure(text="Sharpen", text_color="#19dde0")
+
+        if len(self.img.shape) == 2:
+            height, width = self.img.shape
+        elif len(self.img.shape) == 3:
+            height, width, _ = self.img.shape
+
+        kernel_size = int(min(height, width) * 0.01)
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+
+        img = cv2.GaussianBlur(self.img, (kernel_size, kernel_size), 0)
+        img = cv2.addWeighted(self.img, 1.5, img, -0.5, 0)
+        self.edit_image.append(img)
+        self.img = self.edit_image.back()
+        self.show_image(self.img)
+
+    def morph(self):
+        self.reset_property()
+        self.df_property.pack_forget()
+
+        self.morph_mode.pack()
+
+    def histogram(self):
+        self.reset_property()
+        self.df_property.pack_forget()
+
+        self.histogram_mode.pack()
+
+    def fourier(self):
+        self.reset_property()
+        self.df_property.pack_forget()
+
+        self.fourier_mode.pack()
+        self.fourier_mode.transform()
+
+    def rotate(self):
+        self.reset_property()
+        self.df_property.pack_forget()
+
+        self.rotate_mode.pack()
+
     def undo(self):
         self.img = self.edit_image.undo()
         self.show_image(self.img)
@@ -306,4 +423,5 @@ class Window:
         for x in self.mode:
             x.hide()
 
+        self.df_property.configure(text="No properties", text_color="#ffffff")
         self.df_property.pack()
